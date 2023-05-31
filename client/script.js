@@ -1,9 +1,41 @@
 const socketUrl = 'ws://localhost:8080'
 const ws = new WebSocket(socketUrl)
 
-let clientId
-let gameId
-let playerColor
+class Client {
+  #clientId
+  #gameId
+  #color
+
+  constructor() {
+    console.log('New Client initialized')
+  }
+
+  getMyClientId() {
+    return this.#clientId
+  }
+
+  setMyClientId(clientId) {
+    this.#clientId = clientId
+  }
+
+  getMyGameId() {
+    return this.#gameId
+  }
+
+  setMyGameId(gameId) {
+    this.#gameId = gameId
+  }
+
+  getMyColor() {
+    return this.#color
+  }
+
+  setMyColor(color) {
+    this.#color = color
+  }
+}
+
+const client = new Client()
 
 // grabbing elements
 const createNewGameButton = document.getElementById('createNewGameButton')
@@ -17,18 +49,18 @@ createNewGameButton.onclick = () => {
   ws.send(
     JSON.stringify({
       method: 'create',
-      clientId,
+      clientId: client.getMyClientId(),
     })
   )
 }
 
 joinGameButton.onclick = () => {
-  if (!gameId) gameId = inputGameId.value
+  if (!client.getMyGameId()) client.setMyGameId(inputGameId.value)
   ws.send(
     JSON.stringify({
       method: 'join',
-      clientId,
-      gameId,
+      clientId: client.getMyClientId(),
+      gameId: client.getMyGameId(),
     })
   )
 }
@@ -38,14 +70,16 @@ ws.onmessage = message => {
   const response = JSON.parse(message.data)
 
   if (response.method === 'connect') {
-    clientId = response.clientId
-    console.log('Connection successful, your client ID is: ' + clientId)
+    client.setMyClientId(response.clientId)
+    console.log(
+      'Connection successful, your client ID is: ' + client.getMyClientId()
+    )
   }
 
   if (response.method === 'create') {
-    gameId = response.game.id
+    client.setMyGameId(response.game.id)
     console.log(
-      'Created new game successfully, your game ID is: ' + response.game.id
+      'Created new game successfully, your game ID is: ' + client.getMyGameId()
     )
   }
 
@@ -60,7 +94,7 @@ ws.onmessage = message => {
       player.textContent = c.clientId
       playersContainer.appendChild(player)
 
-      if (c.clientId === clientId) playerColor = c.color
+      if (c.clientId === client.getMyClientId()) client.setMyColor(c.color)
     })
 
     while (board.firstChild) board.removeChild(board.firstChild)
@@ -73,14 +107,14 @@ ws.onmessage = message => {
       cell.style.width = '50px'
       cell.style.height = '50px'
       cell.onclick = () => {
-        cell.style.background = playerColor
+        cell.style.background = client.getMyColor()
         ws.send(
           JSON.stringify({
             method: 'play',
-            clientId,
-            gameId,
+            clientId: client.getMyClientId(),
+            gameId: client.getMyGameId(),
             cellId: cell.tag,
-            color: playerColor,
+            color: client.getMyColor(),
           })
         )
       }
@@ -89,10 +123,10 @@ ws.onmessage = message => {
   }
 
   if (response.method === 'update') {
-    for (let cell of Object.keys(response.game.state)) {
-      const color = response.game.state[cell]
-      const cellObject = document.getElementById('cell' + cell)
-      cellObject.style.backgroundColor = color
+    for (let cellId of Object.keys(response.game.state)) {
+      const cellColor = response.game.state[cellId]
+      const cellObject = document.getElementById('cell' + cellId)
+      cellObject.style.backgroundColor = cellColor
     }
   }
 }

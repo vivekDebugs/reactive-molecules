@@ -3,9 +3,41 @@ const websocket = require('websocket')
 const express = require('express')
 const { guid } = require('./utils')
 
-const clients = {}
-const games = {}
-const colors = ['red', 'green', 'yellow']
+class GameHub {
+  #clients = {}
+  #gameRooms = {}
+  #colors = ['red', 'green', 'yellow']
+
+  constructor() {
+    console.log('New GameHub initialized')
+  }
+
+  getClient(clientId) {
+    return this.#clients[clientId]
+  }
+
+  addClient(clientId, connection) {
+    this.#clients[clientId] = { connection }
+  }
+
+  getGameRoom(gameId) {
+    return this.#gameRooms[gameId]
+  }
+
+  addNewGameRoom(gameId, game) {
+    this.#gameRooms[gameId] = game
+  }
+
+  setGameState(gameId, cellId, color) {
+    this.#gameRooms[gameId].state[cellId] = color
+  }
+
+  getAllColors() {
+    return this.#colors
+  }
+}
+
+const gameHub = new GameHub()
 
 // client hosting
 const app = express()
@@ -44,9 +76,8 @@ ws.on('request', request => {
         clients: [],
         state: {},
       }
-      games[gameId] = newGame
-      const con = clients[clientId].connection
-      con.send(
+      gameHub.addNewGameRoom(gameId, newGame)
+      gameHub.getClient(clientId).connection.send(
         JSON.stringify({
           method: 'create',
           game: newGame,
@@ -57,19 +88,19 @@ ws.on('request', request => {
     if (response.method === 'join') {
       const clientId = response.clientId
       const gameId = response.gameId
-      const game = games[gameId]
+      const game = gameHub.getGameRoom(gameId)
       if (game.clients.length >= 2) {
         console.log('Maxed palyers reached')
         return
       }
-      const color = colors[game.clients.length]
+      const color = gameHub.getAllColors()[game.clients.length]
       game.clients.push({
         clientId,
         color,
       })
 
       game.clients.forEach(c => {
-        clients[c.clientId].connection.send(
+        gameHub.getClient(c.clientId).connection.send(
           JSON.stringify({
             method: 'join',
             game,
@@ -86,17 +117,14 @@ ws.on('request', request => {
       const cellId = response.cellId
       const color = response.color
 
-      let game = games[gameId]
-      let gameState = game.state
-      gameState[cellId] = color
-      game.state = gameState
+      gameHub.setGameState(gameId, cellId, color)
 
-      updateGameState(game)
+      updateGameState(gameHub.getGameRoom(gameId))
     }
   })
 
   const clientId = guid()
-  clients[clientId] = { connection }
+  gameHub.addClient(clientId, connection)
 
   connection.send(
     JSON.stringify({
@@ -108,7 +136,7 @@ ws.on('request', request => {
 
 const updateGameState = game => {
   game.clients.forEach(c => {
-    clients[c.clientId].connection.send(
+    gameHub.getClient(c.clientId).connection.send(
       JSON.stringify({
         method: 'update',
         game,
