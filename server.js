@@ -68,8 +68,6 @@ ws.on('request', request => {
         color,
       })
 
-      if (game.clients.length === 2) updateGameState()
-
       game.clients.forEach(c => {
         clients[c.clientId].connection.send(
           JSON.stringify({
@@ -78,6 +76,8 @@ ws.on('request', request => {
           })
         )
       })
+
+      updateGameState(game)
     }
 
     if (response.method === 'play') {
@@ -86,9 +86,12 @@ ws.on('request', request => {
       const cellId = response.cellId
       const color = response.color
 
-      let gameState = games[gameId].state
+      let game = games[gameId]
+      let gameState = game.state
       gameState[cellId] = color
-      games[gameId].state = gameState
+      game.state = gameState
+
+      updateGameState(game)
     }
   })
 
@@ -103,17 +106,13 @@ ws.on('request', request => {
   )
 })
 
-const updateGameState = () => {
-  for (const g of Object.keys(games)) {
-    const game = games[g]
-    game.clients.forEach(c => {
-      clients[c.clientId].connection.send(
-        JSON.stringify({
-          method: 'update',
-          game,
-        })
-      )
-    })
-  }
-  setTimeout(updateGameState, 500)
+const updateGameState = game => {
+  game.clients.forEach(c => {
+    clients[c.clientId].connection.send(
+      JSON.stringify({
+        method: 'update',
+        game,
+      })
+    )
+  })
 }
