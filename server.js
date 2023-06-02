@@ -20,15 +20,35 @@ class Board {
   getBoard() {
     return this.#board
   }
-}
 
-const board = new Board()
+  getCellCapacity(cellCoords) {
+    if (this.#isCoordsInCorner(cellCoords)) return 1
+    if (this.#isCoordsInEdge(cellCoords)) return 2
+    return 3 // cell in middle
+  }
+
+  #isCoordsInCorner(cellCoords) {
+    const [i, j] = cellCoords
+    return (
+      (i === 0 && j === 0) ||
+      (i === 0 && j === this.length - 1) ||
+      (i === this.length - 1 && j === this.length - 1) ||
+      (i === this.length - 1 && j === 0)
+    )
+  }
+
+  #isCoordsInEdge(cellCoords) {
+    const [i, j] = cellCoords
+    return i === 0 || i === this.length - 1 || j === 0 || j === this.length - 1
+  }
+}
 
 class GameHub {
   #clients = {}
   #gameRooms = {}
   #colors = ['red', 'green', 'yellow']
   maxPlayers = 2
+  #board = new Board()
 
   constructor() {
     console.log('New GameHub initialized')
