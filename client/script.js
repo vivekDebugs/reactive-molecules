@@ -141,7 +141,6 @@ ws.onmessage = message => {
                 clientId: client.getMyClientId(),
                 gameId: client.getMyGameId(),
                 cellCoords: [i, j],
-                cellData: { color: client.getMyColor() },
               })
             )
           }

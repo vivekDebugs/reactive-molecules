@@ -50,10 +50,10 @@ class GameHub {
     this.#gameRooms[gameId] = game
   }
 
-  setGameState(gameId, cellCoords, cellData, clientId) {
+  setGameState(gameId, cellCoords, clientId) {
     const [i, j] = cellCoords
-    const { color } = cellData
     const game = this.#gameRooms[gameId]
+    const { color } = this.#getClientData(gameId, clientId)
     game.nextMoveId = this.#getNextMoveId(clientId, game.clients)
     game.board[i][j] = { color }
   }
@@ -62,6 +62,12 @@ class GameHub {
     const idxOfCurrentClient = clients.findIndex(c => c.clientId === clientId)
     const nextMoveIdx = (idxOfCurrentClient + 1) % clients.length
     return clients[nextMoveIdx].clientId
+  }
+
+  #getClientData(gameId, clientId) {
+    return this.#gameRooms[gameId].clients.filter(
+      c => c.clientId === clientId
+    )[0]
   }
 
   getAllColors() {
@@ -143,8 +149,8 @@ ws.on('request', request => {
     }
 
     if (response.method === 'play') {
-      const { clientId, gameId, cellCoords, cellData } = response
-      gameHub.setGameState(gameId, cellCoords, cellData, clientId)
+      const { clientId, gameId, cellCoords } = response
+      gameHub.setGameState(gameId, cellCoords, clientId)
       updateGameState(gameHub.getGameRoom(gameId))
     }
   })
