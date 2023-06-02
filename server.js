@@ -42,18 +42,11 @@ class Board {
     return i === 0 || i === this.length - 1 || j === 0 || j === this.length - 1
   }
 
-  checkAndSetCellCondition(board, cellCoords, clientId, color) {
-    console.log(cellCoords)
+  #bubble(board, cellCoords, clientId, color) {
     const [i, j] = cellCoords
     const cellCapacity = this.#getCellCapacity(cellCoords)
     const currentCellCount = board[i][j].count
-    if (currentCellCount < cellCapacity) {
-      board[i][j] = {
-        clientId,
-        color,
-        count: board[i][j].count + 1,
-      }
-    } else {
+    if (currentCellCount > cellCapacity) {
       const di = [0, -1, 0, 1]
       const dj = [-1, 0, 1, 0]
       for (let k = 0; k < di.length; k++) {
@@ -68,9 +61,20 @@ class Board {
             color,
             count: board[newI][newJ].count + 1,
           }
+          // this.#bubble(board, [newI, newJ], clientId, color)
         }
       }
     }
+  }
+
+  addMolecule(board, cellCoords, clientId, color) {
+    const [i, j] = cellCoords
+    board[i][j] = {
+      clientId,
+      color,
+      count: board[i][j].count + 1,
+    }
+    this.#bubble(board, cellCoords, clientId, color)
   }
 
   #isCellInBounds(cellCoords) {
@@ -111,12 +115,7 @@ class GameHub {
     const game = this.#gameRooms[gameId]
     game.nextMoveId = this.#getNextMoveId(clientId, game.clients)
     const clientColor = this.#getClientData(gameId, clientId).color
-    this.#board.checkAndSetCellCondition(
-      game.board,
-      cellCoords,
-      clientId,
-      clientColor
-    )
+    this.#board.addMolecule(game.board, cellCoords, clientId, clientColor)
   }
 
   #getNextMoveId(clientId, clients = []) {
