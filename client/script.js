@@ -123,12 +123,12 @@ ws.onmessage = message => {
       const row = game.board[i]
       const boardRow = document.createElement('div')
       for (let j = 0; j < row.length; j++) {
-        const { color } = row[j] || {}
+        const { color, count } = row[j] || {}
         const cell = document.createElement('button')
         cell.style.width = '30px'
         cell.style.height = '30px'
         cell.id = 'cell-' + i + j
-        cell.textContent = i + '' + j
+        cell.textContent = count
         cell.style.background = color
         boardRow.appendChild(cell)
         cell.onclick = () => {
@@ -157,9 +157,10 @@ ws.onmessage = message => {
     for (let i = 0; i < game.board.length; i++) {
       const row = game.board[i]
       for (let j = 0; j < row.length; j++) {
-        const { color } = row[j] || {}
+        const { color, count } = row[j] || {}
         const cell = document.getElementById('cell-' + i + j)
         cell.style.background = color
+        cell.textContent = count
       }
     }
   }

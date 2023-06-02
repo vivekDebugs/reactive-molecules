@@ -11,7 +11,7 @@ class Board {
     for (let i = 0; i < this.length; i++) {
       const row = []
       for (let j = 0; j < this.length; j++) {
-        row.push(null)
+        row.push({ count: 0 })
       }
       this.#board.push(row)
     }
@@ -55,7 +55,7 @@ class GameHub {
     const game = this.#gameRooms[gameId]
     const { color } = this.#getClientData(gameId, clientId)
     game.nextMoveId = this.#getNextMoveId(clientId, game.clients)
-    game.board[i][j] = { color }
+    game.board[i][j] = { color, count: game.board[i][j].count + 1 }
   }
 
   #getNextMoveId(clientId, clients = []) {
