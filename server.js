@@ -3,10 +3,32 @@ const websocket = require('websocket')
 const express = require('express')
 const { guid } = require('./utils')
 
+class Board {
+  #board = []
+  length = 10
+
+  constructor() {
+    for (let i = 0; i < this.length; i++) {
+      const row = []
+      for (let j = 0; j < this.length; j++) {
+        row.push(null)
+      }
+      this.#board.push(row)
+    }
+  }
+
+  getBoard() {
+    return this.#board
+  }
+}
+
+const board = new Board()
+
 class GameHub {
   #clients = {}
   #gameRooms = {}
   #colors = ['red', 'green', 'yellow']
+  maxPlayers = 2
 
   constructor() {
     console.log('New GameHub initialized')
@@ -28,8 +50,18 @@ class GameHub {
     this.#gameRooms[gameId] = game
   }
 
-  setGameState(gameId, cellId, color) {
-    this.#gameRooms[gameId].state[cellId] = color
+  setGameState(gameId, cellCoords, cellData, clientId) {
+    const [i, j] = cellCoords
+    const { color } = cellData
+    const game = this.#gameRooms[gameId]
+    game.nextMoveId = this.#getNextMoveId(clientId, game.clients)
+    game.board[i][j] = { color }
+  }
+
+  #getNextMoveId(clientId, clients = []) {
+    const idxOfCurrentClient = clients.findIndex(c => c.clientId === clientId)
+    const nextMoveIdx = (idxOfCurrentClient + 1) % clients.length
+    return clients[nextMoveIdx].clientId
   }
 
   getAllColors() {
@@ -70,11 +102,12 @@ ws.on('request', request => {
     if (response.method === 'create') {
       const clientId = response.clientId
       const gameId = guid()
+      const newBoard = new Board()
       const newGame = {
         id: gameId,
-        cells: 20,
         clients: [],
-        state: {},
+        board: newBoard.getBoard(),
+        nextMoveId: '',
       }
       gameHub.addNewGameRoom(gameId, newGame)
       gameHub.getClient(clientId).connection.send(
@@ -89,7 +122,7 @@ ws.on('request', request => {
       const clientId = response.clientId
       const gameId = response.gameId
       const game = gameHub.getGameRoom(gameId)
-      if (game.clients.length >= 2) {
+      if (game.clients.length >= gameHub.maxPlayers) {
         console.log('Maxed palyers reached')
         return
       }
@@ -107,18 +140,11 @@ ws.on('request', request => {
           })
         )
       })
-
-      updateGameState(game)
     }
 
     if (response.method === 'play') {
-      const clientId = response.clientId
-      const gameId = response.gameId
-      const cellId = response.cellId
-      const color = response.color
-
-      gameHub.setGameState(gameId, cellId, color)
-
+      const { clientId, gameId, cellCoords, cellData } = response
+      gameHub.setGameState(gameId, cellCoords, cellData, clientId)
       updateGameState(gameHub.getGameRoom(gameId))
     }
   })

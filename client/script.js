@@ -37,12 +37,27 @@ class Client {
 
 const client = new Client()
 
+class Game {
+  #game = {}
+  constructor(game = {}) {
+    this.#game = game
+  }
+  getMyGame() {
+    return this.#game
+  }
+  setMyGame(game) {
+    this.#game = game
+  }
+}
+
+const myGame = new Game()
+
 // grabbing elements
 const createNewGameButton = document.getElementById('createNewGameButton')
 const joinGameButton = document.getElementById('joinGameButton')
 const inputGameId = document.getElementById('inputGameId')
 const playersContainer = document.getElementById('playersContainer')
-const board = document.getElementById('board')
+const boardContainer = document.getElementById('board')
 
 // send ws messages based on events
 createNewGameButton.onclick = () => {
@@ -70,6 +85,7 @@ ws.onmessage = message => {
   const response = JSON.parse(message.data)
 
   if (response.method === 'connect') {
+    console.log(response)
     client.setMyClientId(response.clientId)
     console.log(
       'Connection successful, your client ID is: ' + client.getMyClientId()
@@ -77,6 +93,7 @@ ws.onmessage = message => {
   }
 
   if (response.method === 'create') {
+    console.log(response)
     client.setMyGameId(response.game.id)
     console.log(
       'Created new game successfully, your game ID is: ' + client.getMyGameId()
@@ -84,7 +101,9 @@ ws.onmessage = message => {
   }
 
   if (response.method === 'join') {
+    console.log(response)
     const game = response.game
+    myGame.setMyGame(game)
     while (playersContainer.firstChild)
       playersContainer.removeChild(playersContainer.firstChild)
 
@@ -97,36 +116,52 @@ ws.onmessage = message => {
       if (c.clientId === client.getMyClientId()) client.setMyColor(c.color)
     })
 
-    while (board.firstChild) board.removeChild(board.firstChild)
+    while (boardContainer.firstChild)
+      boardContainer.removeChild(boardContainer.firstChild)
 
-    for (let i = 0; i < game.cells; i++) {
-      const cell = document.createElement('button')
-      cell.id = 'cell' + (i + 1)
-      cell.tag = i + 1
-      cell.textContent = i + 1
-      cell.style.width = '50px'
-      cell.style.height = '50px'
-      cell.onclick = () => {
-        cell.style.background = client.getMyColor()
-        ws.send(
-          JSON.stringify({
-            method: 'play',
-            clientId: client.getMyClientId(),
-            gameId: client.getMyGameId(),
-            cellId: cell.tag,
-            color: client.getMyColor(),
-          })
-        )
+    for (let i = 0; i < game.board.length; i++) {
+      const row = game.board[i]
+      const boardRow = document.createElement('div')
+      for (let j = 0; j < row.length; j++) {
+        const { color } = row[j] || {}
+        const cell = document.createElement('button')
+        cell.style.width = '30px'
+        cell.style.height = '30px'
+        cell.id = 'cell-' + i + j
+        cell.textContent = i + '' + j
+        cell.style.background = color
+        boardRow.appendChild(cell)
+        cell.onclick = () => {
+          const nextMoveId = myGame.getMyGame().nextMoveId
+          if (nextMoveId === client.getMyClientId() || nextMoveId == '') {
+            console.log('Clicked on cell with coordinates: ', i, j)
+            ws.send(
+              JSON.stringify({
+                method: 'play',
+                clientId: client.getMyClientId(),
+                gameId: client.getMyGameId(),
+                cellCoords: [i, j],
+                cellData: { color: client.getMyColor() },
+              })
+            )
+          }
+        }
       }
-      board.appendChild(cell)
+      boardContainer.appendChild(boardRow)
     }
   }
 
   if (response.method === 'update') {
-    for (let cellId of Object.keys(response.game.state)) {
-      const cellColor = response.game.state[cellId]
-      const cellObject = document.getElementById('cell' + cellId)
-      cellObject.style.backgroundColor = cellColor
+    console.log(response)
+    const game = response.game
+    myGame.setMyGame(game)
+    for (let i = 0; i < game.board.length; i++) {
+      const row = game.board[i]
+      for (let j = 0; j < row.length; j++) {
+        const { color } = row[j] || {}
+        const cell = document.getElementById('cell-' + i + j)
+        cell.style.background = color
+      }
     }
   }
 }
