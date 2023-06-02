@@ -159,7 +159,7 @@ ws.onmessage = message => {
       for (let j = 0; j < row.length; j++) {
         const { color, count } = row[j] || {}
         const cell = document.getElementById('cell-' + i + j)
-        cell.style.background = color
+        cell.style.background = count > 0 ? color : null
         cell.textContent = count
       }
     }

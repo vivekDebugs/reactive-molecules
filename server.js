@@ -21,7 +21,7 @@ class Board {
     return this.#board
   }
 
-  getCellCapacity(cellCoords) {
+  #getCellCapacity(cellCoords) {
     if (this.#isCoordsInCorner(cellCoords)) return 1
     if (this.#isCoordsInEdge(cellCoords)) return 2
     return 3 // cell in middle
@@ -40,6 +40,42 @@ class Board {
   #isCoordsInEdge(cellCoords) {
     const [i, j] = cellCoords
     return i === 0 || i === this.length - 1 || j === 0 || j === this.length - 1
+  }
+
+  checkAndSetCellCondition(board, cellCoords, clientId, color) {
+    console.log(cellCoords)
+    const [i, j] = cellCoords
+    const cellCapacity = this.#getCellCapacity(cellCoords)
+    const currentCellCount = board[i][j].count
+    if (currentCellCount < cellCapacity) {
+      board[i][j] = {
+        clientId,
+        color,
+        count: board[i][j].count + 1,
+      }
+    } else {
+      const di = [0, -1, 0, 1]
+      const dj = [-1, 0, 1, 0]
+      for (let k = 0; k < di.length; k++) {
+        const newI = i + di[k]
+        const newJ = j + dj[k]
+        if (this.#isCellInBounds([newI, newJ])) {
+          if (board[i][j].count !== 0) {
+            board[i][j].count -= 1
+          }
+          board[newI][newJ] = {
+            clientId,
+            color,
+            count: board[newI][newJ].count + 1,
+          }
+        }
+      }
+    }
+  }
+
+  #isCellInBounds(cellCoords) {
+    const [i, j] = cellCoords
+    return i >= 0 && i < this.length && j >= 0 && j < this.length
   }
 }
 
@@ -73,9 +109,14 @@ class GameHub {
   setGameState(gameId, cellCoords, clientId) {
     const [i, j] = cellCoords
     const game = this.#gameRooms[gameId]
-    const { color } = this.#getClientData(gameId, clientId)
     game.nextMoveId = this.#getNextMoveId(clientId, game.clients)
-    game.board[i][j] = { color, count: game.board[i][j].count + 1 }
+    const clientColor = this.#getClientData(gameId, clientId).color
+    this.#board.checkAndSetCellCondition(
+      game.board,
+      cellCoords,
+      clientId,
+      clientColor
+    )
   }
 
   #getNextMoveId(clientId, clients = []) {
