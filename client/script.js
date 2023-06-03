@@ -111,10 +111,22 @@ ws.onmessage = message => {
       playersContainer.removeChild(playersContainer.firstChild)
 
     game.clients.forEach(c => {
-      const player = document.createElement('div')
+      const playerWrapper = document.createElement('div')
+      const label = document.createElement('span')
+      label.textContent =
+        c.clientId === client.getMyClientId() ? 'You: ' : 'They: '
+      const player = document.createElement('span')
+      player.style.width = '15px'
+      player.style.height = '15px'
       player.style.background = c.color
-      player.textContent = c.clientId
-      playersContainer.appendChild(player)
+      player.style.display = 'inline-block'
+      player.style.border = '2px solid white'
+      player.id = 'client-' + c.clientId
+      playerWrapper.appendChild(label)
+      playerWrapper.appendChild(player)
+
+      playerWrapper.style.margin = '10px'
+      playersContainer.appendChild(playerWrapper)
 
       if (c.clientId === client.getMyClientId()) client.setMyColor(c.color)
     })
@@ -162,6 +174,15 @@ ws.onmessage = message => {
     console.log(response)
     const game = response.game
     myGame.setMyGame(game)
+    game.clients.forEach(c => {
+      if (c.clientId === game.nextMoveId) {
+        const elem = document.getElementById('client-' + game.nextMoveId)
+        elem.style.border = '2px solid black'
+      } else {
+        const elem = document.getElementById('client-' + c.clientId)
+        elem.style.border = '2px solid white'
+      }
+    })
     for (let i = 0; i < game.board.length; i++) {
       const row = game.board[i]
       for (let j = 0; j < row.length; j++) {
