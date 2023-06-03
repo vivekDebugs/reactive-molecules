@@ -48,6 +48,9 @@ class Game {
   setMyGame(game) {
     this.#game = game
   }
+  getCellMetadata([i, j]) {
+    return this.#game.board[i][j]
+  }
 }
 
 const myGame = new Game()
@@ -132,8 +135,12 @@ ws.onmessage = message => {
         cell.style.background = color
         boardRow.appendChild(cell)
         cell.onclick = () => {
-          const nextMoveId = myGame.getMyGame().nextMoveId
-          if (nextMoveId === client.getMyClientId() || nextMoveId == '') {
+          const { nextMoveId } = myGame.getMyGame()
+          const { clientId: cellOwnerId } = myGame.getCellMetadata([i, j])
+          if (
+            (!nextMoveId || nextMoveId === client.getMyClientId()) &&
+            (!cellOwnerId || cellOwnerId === client.getMyClientId())
+          ) {
             console.log('Clicked on cell with coordinates: ', i, j)
             ws.send(
               JSON.stringify({
