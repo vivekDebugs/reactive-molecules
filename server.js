@@ -56,6 +56,11 @@ class Board {
           if (this.#isCellInBounds([newI, newJ])) {
             if (board[i][j].count !== 0) {
               board[i][j].count -= 1
+              if (board[i][j].count === 0) {
+                board[i][j] = {
+                  count: 0,
+                }
+              }
             }
             board[newI][newJ] = {
               clientId,
