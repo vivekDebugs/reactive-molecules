@@ -1,7 +1,11 @@
+// env (bad practice) ==============
+// get these from env
 const SERVER_PORT = 8080
 const HOST = 'reactive-mol.onrender.com'
+const PROTOCOL = 'wss'
+// =================================
 
-const socketUrl = 'ws://' + HOST + ':' + SERVER_PORT
+const socketUrl = PROTOCOL + '://' + HOST + ':' + SERVER_PORT
 const ws = new WebSocket(socketUrl)
 
 class Client {
