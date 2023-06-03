@@ -42,26 +42,28 @@ class Board {
     return i === 0 || i === this.length - 1 || j === 0 || j === this.length - 1
   }
 
-  #bubble(board, cellCoords, clientId, color) {
-    const [i, j] = cellCoords
-    const cellCapacity = this.#getCellCapacity(cellCoords)
-    const currentCellCount = board[i][j].count
-    if (currentCellCount > cellCapacity) {
-      const di = [0, -1, 0, 1]
-      const dj = [-1, 0, 1, 0]
-      for (let k = 0; k < di.length; k++) {
-        const newI = i + di[k]
-        const newJ = j + dj[k]
-        if (this.#isCellInBounds([newI, newJ])) {
-          if (board[i][j].count !== 0) {
-            board[i][j].count -= 1
+  #bubble(board, clientId, color, bubblingQueue = []) {
+    while (bubblingQueue.length) {
+      const [i, j] = bubblingQueue.shift()
+      const cellCapacity = this.#getCellCapacity([i, j])
+      const currentCellCount = board[i][j].count
+      if (currentCellCount > cellCapacity) {
+        const di = [0, -1, 0, 1]
+        const dj = [-1, 0, 1, 0]
+        for (let k = 0; k < di.length; k++) {
+          const newI = i + di[k]
+          const newJ = j + dj[k]
+          if (this.#isCellInBounds([newI, newJ])) {
+            if (board[i][j].count !== 0) {
+              board[i][j].count -= 1
+            }
+            board[newI][newJ] = {
+              clientId,
+              color,
+              count: board[newI][newJ].count + 1,
+            }
+            bubblingQueue.push([newI, newJ])
           }
-          board[newI][newJ] = {
-            clientId,
-            color,
-            count: board[newI][newJ].count + 1,
-          }
-          // this.#bubble(board, [newI, newJ], clientId, color)
         }
       }
     }
@@ -74,7 +76,7 @@ class Board {
       color,
       count: board[i][j].count + 1,
     }
-    this.#bubble(board, cellCoords, clientId, color)
+    this.#bubble(board, clientId, color, [cellCoords])
   }
 
   #isCellInBounds(cellCoords) {
