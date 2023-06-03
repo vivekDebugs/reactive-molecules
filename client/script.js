@@ -61,6 +61,7 @@ const joinGameButton = document.getElementById('joinGameButton')
 const inputGameId = document.getElementById('inputGameId')
 const playersContainer = document.getElementById('playersContainer')
 const boardContainer = document.getElementById('board')
+const gameIdContainer = document.getElementById('gameIdContainer')
 
 // send ws messages based on events
 createNewGameButton.onclick = () => {
@@ -72,8 +73,16 @@ createNewGameButton.onclick = () => {
   )
 }
 
+function displayGameId() {
+  gameIdContainer.style.margin = '10px'
+  gameIdContainer.textContent = 'Game ID: ' + client.getMyGameId()
+}
+
 joinGameButton.onclick = () => {
-  if (!client.getMyGameId()) client.setMyGameId(inputGameId.value)
+  if (!inputGameId.value) {
+    return alert('Please enter game ID')
+  }
+  client.setMyGameId(inputGameId.value)
   ws.send(
     JSON.stringify({
       method: 'join',
@@ -98,6 +107,7 @@ ws.onmessage = message => {
   if (response.method === 'create') {
     console.log(response)
     client.setMyGameId(response.game.id)
+    displayGameId()
     console.log(
       'Created new game successfully, your game ID is: ' + client.getMyGameId()
     )
@@ -105,6 +115,7 @@ ws.onmessage = message => {
 
   if (response.method === 'join') {
     console.log(response)
+    displayGameId()
     const game = response.game
     myGame.setMyGame(game)
     while (playersContainer.firstChild)
