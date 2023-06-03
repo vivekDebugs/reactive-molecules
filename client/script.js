@@ -1,4 +1,7 @@
-const socketUrl = 'ws://localhost:8080'
+const SERVER_PORT = 8080
+const HOST = 'reactive-mol.onrender.com'
+
+const socketUrl = 'ws://' + HOST + ':' + SERVER_PORT
 const ws = new WebSocket(socketUrl)
 
 class Client {
