@@ -181,6 +181,7 @@ ws.on('request', request => {
         clients: [],
         board: newBoard.getBoard(),
         nextMoveId: '',
+        isStart: false,
       }
       gameHub.addNewGameRoom(gameId, newGame)
       gameHub.getClient(clientId).connection.send(
@@ -204,7 +205,9 @@ ws.on('request', request => {
         clientId,
         color,
       })
-
+      if (game.clients.length === 2) {
+        game.isStart = true
+      }
       game.clients.forEach(c => {
         gameHub.getClient(c.clientId).connection.send(
           JSON.stringify({

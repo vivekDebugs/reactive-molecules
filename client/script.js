@@ -135,9 +135,10 @@ ws.onmessage = message => {
         cell.style.background = color
         boardRow.appendChild(cell)
         cell.onclick = () => {
-          const { nextMoveId } = myGame.getMyGame()
+          const { nextMoveId, isStart } = myGame.getMyGame()
           const { clientId: cellOwnerId } = myGame.getCellMetadata([i, j])
           if (
+            isStart &&
             (!nextMoveId || nextMoveId === client.getMyClientId()) &&
             (!cellOwnerId || cellOwnerId === client.getMyClientId())
           ) {
